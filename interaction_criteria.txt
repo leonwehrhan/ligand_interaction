@@ -1,0 +1,44 @@
+Schrödinger Criteria:
+
+H-Bonds: 
+    H-A distance < 2.8 A (glide 2.5 A)
+    D-H..A angle > 120° (glide 90°)
+    H..A-B angle > 90° (glide 60°)
+
+Halogen Bonds:
+    Halogen Donor:
+        X..A distance < 2.8 A
+        D-X..A angle > 120°
+        X..A-B angle > 90°
+    
+    Halogen Acceptor:
+        H..X distance < 2.8 A
+        D-H..X angle > 120°
+        H..X-A angle > 90°
+        H..X-A angle < maximum acceptor angle
+
+Contacts:
+
+    C = D_12 / (R_1 + R_2)
+
+    D_12 : distance between atoms 1 and 2
+    R_1, R_2: VdW radii of atoms 1 and 2
+
+    Good: 1.30 > C > 0.89
+    Bad: 0.89 > C > 0.75
+    Ugly: C < 0.75
+
+Pi-Cation:
+    Cation - aromatic distance < 4.5 A
+
+Pi-Pi:
+    Two aromatic groups stacked face-to-face or edge-to-face
+
+Other Hydrophobic:
+    Non-specific hydrophobic sidechain within 3.6 A of ligand's aromatic or aliphatic carbons
+
+Ionic interaction:
+    Cation - Anion distance < 3.7 A and not involved in a H-bond
+
+Water bridges:
+    H-bond (see above) with water in between. slightly changed criteria: 2.8 A, 110°, 90°.
