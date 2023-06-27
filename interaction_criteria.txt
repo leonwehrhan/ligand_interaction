@@ -42,3 +42,7 @@ Ionic interaction:
 
 Water bridges:
     H-bond (see above) with water in between. slightly changed criteria: 2.8 A, 110°, 90°.
+
+F-H bonds:
+    X..D distance < 3.3 A
+    X..H-D angle > 160°
