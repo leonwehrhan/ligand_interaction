@@ -1,5 +1,6 @@
 import mdtraj as md
 import numpy as np
+import itertools
 
 
 class Interaction:
@@ -19,6 +20,9 @@ class Interaction:
         self.t = t
         self.idx_receptor = t.top.select(sel_receptor)
         self.idx_ligand = t.top.select(sel_ligand)
+
+        # store data here
+        self.interactions = {}
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
         print(f'Receptor has {len(self.idx_receptor)} atoms.')
@@ -46,4 +50,18 @@ class Interaction:
         print(f'Ligand has {len(ligand_residues)} residues.')
 
     def residue_contacts(self):
-        pass
+        residue_pairs = np.array([x for x in itertools.product(self.ligand_residues, self.receptor_residues)])
+
+        print(f'Compute residue contacts for {len(residue_pairs)} residue pairs.')
+
+        contacts, _ = md.compute_contacts(self.t, residue_pairs, scheme='closest-heavy')
+
+        self.residue_pairs_idx = residue_pairs
+        self.residue_pairs_names = []
+        for x in residue_pairs:
+            r1 = self.t.top.residue(x[0])
+            r2 = self.t.top.residue(x[1])
+            s = f'{r1.name}{r1.resSeq}-{r2.name}{r2.resSeq}'
+            self.residue_pairs_names.append(s)
+        
+        self.contact_distances = contacts
