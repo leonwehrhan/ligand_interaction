@@ -32,10 +32,10 @@ class Interface:
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
         print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
-        print(f'Ligand has {len(self.idx_ligands)} atoms and {len(self.resid_ligand)} residues.')
+        print(f'Ligand has {len(self.idx_ligand)} atoms and {len(self.resid_ligand)} residues.')
 
         # interface residues
-        self.interface_receptor, self.interface_ligand = self.get_interface(self, method='contacts', cutoff=0.35)
+        self.interface_receptor, self.interface_ligand = self.get_interface(method='contacts', cutoff=0.35)
 
     
     def resid_from_aidx(self, atom_idx):
@@ -68,6 +68,39 @@ class Interface:
             return interface_resid_receptor, interface_resid_ligand
         else:
             pass
+    
+    def store_residue(self, resid):
+        r = self.t.top.residue(resid)
+        R = Residue()
+        R.index = resid
+        R.name = r.name
+        R.resSeq = r.resSeq
+
+        bonds = []
+        for b in self.t.top.bonds:
+            if b[0].residue == r or b[1].residue == r:
+                bonds.append([b[0].index, b[1].index])
+        R.bonds = bonds
+
+        atoms = []
+        for a in r.atoms:
+            A = Atom()
+            A.index = a.index
+            A.name = a.name
+            A.element = a.element
+            A.residue = R
+
+            a_bonds = []
+            for b in self.t.top.bonds:
+                if b[0].index == a.index or b[1].index == a.index:
+                    for x in b:
+                        if x.index != a.index:
+                            a_bonds.append([x.index, x.element])
+            A.bonds = a_bonds
+
+            A.is_sidechain = a.is_sidechain
+
+            atoms.append(A)
 
 
 class Residue:
@@ -84,6 +117,7 @@ class Atom:
     def __init__(self):
         self.index = None
         self.name = None
+        self.element = None
         self.residue = None
 
         self.bonds = []
@@ -93,6 +127,7 @@ class Atom:
         self.is_hbond_acceptor = None
         self.is_cation = None
         self.is_anion = None
+        self.is_halogen = None
         self.is_hydrophobic = None
 
 
