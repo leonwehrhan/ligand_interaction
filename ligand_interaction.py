@@ -15,10 +15,8 @@ class Interface:
         Selection string for receptor.
     sel_ligand : str
         Selection string for ligand.
-    method : str
-        Method for determining interface.
     '''
-    def __init__(self, t, sel_receptor, sel_ligand, method='contacts'):
+    def __init__(self, t, sel_receptor, sel_ligand):
         self.t = t
 
         # atom indices of receptor and ligand
@@ -29,14 +27,15 @@ class Interface:
         self.resid_receptor = self.resid_from_aidx(self.idx_receptor)
         self.resid_ligand = self.resid_from_aidx(self.idx_ligand)
 
-        self.interface_residues = []
-
-        # store interaction data here
-        self.interactions = {}
+        # interaction data
+        self.residue_contacts = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
         print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
         print(f'Ligand has {len(self.idx_ligands)} atoms and {len(self.resid_ligand)} residues.')
+
+        # interface residues
+        self.interface_receptor, self.interface_ligand = self.get_interface(self, method='contacts', cutoff=0.35)
 
     
     def resid_from_aidx(self, atom_idx):
@@ -48,26 +47,28 @@ class Interface:
                 resid.append(r_i)
         return resid
     
-    def get_interface(self, method='contacts'):
-        pass
+    def get_interface(self, method='contacts', cutoff=0.35):
+        interface_resid_receptor = []
+        interface_resid_ligand = []
+        if method == 'contacts':
+            # compute residue contacts of all ligand residue pairs
+            # only apply first frame of trajectory
+            residue_pairs = np.array([x for x in itertools.product(self.resid_ligand, self.resid_receptor)])
+            contacts, _ = md.compute_contacts(self.t[0], residue_pairs, scheme='closest-heavy')
 
-    def residue_contacts(self, cutoff=0.35):
-        '''
-        Compute residue contact distances of all ligand-receptor residue pairs. Has to be run to determine interface residues.
-        '''
-        residue_pairs = np.array([x for x in itertools.product(self.ligand_residues, self.receptor_residues)])
+            interface_pairs = np.where(contacts[0] < cutoff)[0]
 
-        print(f'Compute residue contacts for {len(residue_pairs)} residue pairs.')
+            for i in interface_pairs:
+                rp = residue_pairs[i]
+                if rp[0] not in interface_resid_ligand:
+                    interface_resid_ligand.append(rp[0])
+                if rp[1] not in interface_resid_receptor:
+                    interface_resid_receptor.append(rp[1])
+            
+            return interface_resid_receptor, interface_resid_ligand
+        else:
+            pass
 
-        contacts, _ = md.compute_contacts(self.t, residue_pairs, scheme='closest-heavy')
 
-        self.residue_pairs_idx = residue_pairs
-        self.residue_pairs_names = []
-        for x in residue_pairs:
-            r1 = self.t.top.residue(x[0])
-            r2 = self.t.top.residue(x[1])
-            s = f'{r1.name}{r1.resSeq}-{r2.name}{r2.resSeq}'
-            self.residue_pairs_names.append(s)
-        
-        # store contact distances
-        self.residue_contact_distances = contacts
+if __name__ == 'main':
+    pass
