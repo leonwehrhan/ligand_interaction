@@ -87,7 +87,7 @@ class Interface:
             A = Atom()
             A.index = a.index
             A.name = a.name
-            A.element = a.element
+            A.element = a.element.symbol
             A.residue = R
 
             a_bonds = []
@@ -95,12 +95,50 @@ class Interface:
                 if b[0].index == a.index or b[1].index == a.index:
                     for x in b:
                         if x.index != a.index:
-                            a_bonds.append([x.index, x.element])
+                            a_bonds.append([x.index, x.element.symbol])
             A.bonds = a_bonds
 
             A.is_sidechain = a.is_sidechain
 
+            if A.element == 'N' or A.element == 'O':
+                A.is_hbond_acceptor = True
+            else:
+                A.is_hbond_acceptor = False
+            
+            if A.element == 'N' or A.element == 'O':
+                if any([x[1] == 'H' for x in A.bonds]):
+                    A.is_hbond_donor = True
+                else:
+                    A.is_hbond_donor = False
+            else:
+                A.is_hbond_donor = False
+            
+            if A.element in ['F', 'Cl', 'Br', 'I']:
+                A.is_halogen = True
+            else:
+                A.is_halogen = False
+            
+            if R.name in residue_anions:
+                if a.name in residue_anions[R.name]:
+                    A.is_anion = True
+                else:
+                    A.is_anion = False
+            else:
+                A.is_anion = False
+
+            if R.name in residue_cations:
+                if a.name in residue_cations[R.name]:
+                    A.is_cation = True
+                else:
+                    A.is_cation = False
+            else:
+                A.is_cation = False
+
             atoms.append(A)
+
+        R.atoms = atoms
+
+        return R
 
 
 class Residue:
@@ -129,6 +167,10 @@ class Atom:
         self.is_anion = None
         self.is_halogen = None
         self.is_hydrophobic = None
+
+
+residue_cations = {'ARG':['NH1', 'NH2'], 'LYS':['NZ'], 'HIP':['ND1', 'NE2'], 'HIE':['NE2'], 'HID':['ND1']}
+residue_anions = {'ASP':['OD1', 'OD2'], 'GLU': ['OE1', 'OE2']}
 
 
 if __name__ == 'main':
