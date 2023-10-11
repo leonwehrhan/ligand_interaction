@@ -48,7 +48,7 @@ class Interface:
                 resid.append(r_i)
         return np.array(resid)
     
-    def get_interface(self, method='contacts', cutoff=0.35):
+    def get_interface(self, method='contacts', cutoff=0.4):
         interface_resid_receptor = []
         interface_resid_ligand = []
         if method == 'contacts':
