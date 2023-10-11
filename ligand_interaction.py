@@ -39,6 +39,29 @@ class Interface:
         self.interface_receptor = [self.store_residue(x) for x in interface_resid_receptor]
         self.interface_ligand = [self.store_residue(x) for x in interface_resid_ligand]
     
+    def get_residue_contacts(self, cutoff=0.35, mode='interface'):
+        if mode == 'interface':
+            interface_resid_receptor = [x.index for x in self.interface_receptor]
+            interface_resid_ligand = [x.index for x in self.interface_ligand]
+            residue_pairs = np.array([x for x in itertools.product(interface_resid_receptor, interface_resid_ligand)])
+
+            residue_contacts = []
+
+            contacts, _ = md.compute_contacts(self.t, residue_pairs, scheme='closest-heavy')
+
+            for frame in contacts:
+                pairs = np.array([residue_pairs[i] for i in np.where(frame < cutoff)[0]])
+                residue_contacts.append(pairs)
+
+            self.residue_contacts = residue_contacts
+        elif mode == 'all':
+            pass
+        else:
+            pass
+
+    def get_atom_contacts(self, mode='interface'):
+        pass
+    
     def resid_from_aidx(self, atom_idx):
         resid = []
         for i in atom_idx:
