@@ -70,3 +70,15 @@ def test_store_residue(interface_object):
             assert [3441, 'F'] in a.bonds
             assert [3442, 'F'] in a.bonds
             assert [3443, 'F'] in a.bonds
+        
+        if a.name == 'N':
+            assert a.is_hbond_donor == True
+            assert a.is_hbond_acceptor == True
+        
+        if a.name == 'O':
+            assert a.is_hbond_acceptor == True
+            assert a.is_hbond_donor == False
+        
+        if a.name == 'CG':
+            assert a.is_hbond_acceptor == False
+            assert a.is_hbond_donor == False
