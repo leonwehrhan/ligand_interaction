@@ -46,7 +46,7 @@ class Interface:
             r_i = a.residue.index
             if r_i not in resid:
                 resid.append(r_i)
-        return resid
+        return np.array(resid)
     
     def get_interface(self, method='contacts', cutoff=0.35):
         interface_resid_receptor = []
