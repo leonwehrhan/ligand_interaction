@@ -35,12 +35,13 @@ class Interface:
         print(f'Ligand has {len(self.idx_ligand)} atoms and {len(self.resid_ligand)} residues.')
 
         # interface residues
-        self.interface_receptor, self.interface_ligand = self.get_interface(method='contacts', cutoff=0.35)
-
+        interface_resid_receptor, interface_resid_ligand = self.get_interface(method='contacts', cutoff=0.35)
+        self.interface_receptor = [self.store_residue(x) for x in interface_resid_receptor]
+        self.interface_ligand = [self.store_residue(x) for x in interface_resid_ligand]
     
     def resid_from_aidx(self, atom_idx):
         resid = []
-        for i in self.idx_ligand:
+        for i in atom_idx:
             a = self.t.top.atom(i)
             r_i = a.residue.index
             if r_i not in resid:
