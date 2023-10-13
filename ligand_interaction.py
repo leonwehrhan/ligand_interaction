@@ -30,6 +30,7 @@ class Interface:
         # interaction data
         self.residue_contacts = None
         self.atom_contacts = None
+        self.halogen_contacts = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
         print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
@@ -60,7 +61,7 @@ class Interface:
         else:
             pass
 
-    def get_atom_contacts(self, cutoff=0.35, mode='interface'):
+    def get_atom_contacts(self, cutoff=0.35, mode='interface', halogen_only=False):
         if mode == 'interface':
             atom_contacts = []
 
@@ -78,6 +79,10 @@ class Interface:
                     if a.element != 'H':
                         receptor_atoms.append(a)
             
+            # for halogen contacts remove all atoms but halogens
+            if halogen_only:
+                ligand_atoms = [a for a in ligand_atoms if a.is_halogen]
+
             # store neighbor list for each ligand atom
             neighbor_lists = []
             
