@@ -29,13 +29,14 @@ class Interface:
 
         # interaction data
         self.residue_contacts = None
+        self.atom_contacts = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
         print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
         print(f'Ligand has {len(self.idx_ligand)} atoms and {len(self.resid_ligand)} residues.')
 
         # interface residues
-        interface_resid_receptor, interface_resid_ligand = self.get_interface(method='contacts', cutoff=0.35)
+        interface_resid_receptor, interface_resid_ligand = self.get_interface(method='contacts', cutoff=0.4)
         self.interface_receptor = [self.store_residue(x) for x in interface_resid_receptor]
         self.interface_ligand = [self.store_residue(x) for x in interface_resid_ligand]
     
@@ -59,8 +60,50 @@ class Interface:
         else:
             pass
 
-    def get_atom_contacts(self, mode='interface'):
-        pass
+    def get_atom_contacts(self, cutoff=0.35, mode='interface'):
+        if mode == 'interface':
+            atom_contacts = []
+
+            # atom objects for ligand and receptor heavy atoms
+            ligand_atoms = []
+            receptor_atoms = []
+
+            for r in self.interface_ligand:
+                for a in r.atoms:
+                    if a.element != 'H':
+                        ligand_atoms.append(a)
+            
+            for r in self.interface_receptor:
+                for a in r.atoms:
+                    if a.element != 'H':
+                        receptor_atoms.append(a)
+            
+            # store neighbor list for each ligand atom
+            neighbor_lists = []
+            
+            # receptor heavy atom indices as haystack_indices
+            idx_receptor = [a.index for a in receptor_atoms]
+
+            for a in ligand_atoms:
+                neigh = md.compute_neighbors(self.t, cutoff=cutoff, query_indices=[a.index], haystack_indices=[idx_receptor])
+                neighbor_lists.append(neigh)
+            
+            for i_frame in range(len(neighbor_lists[0])):
+                frame = []
+                for i, nl in enumerate(neighbor_lists):
+                    ligand_atom_idx = ligand_atoms[i].index
+                    nl_frame = nl[i_frame]
+
+                    for residue_atom_idx in nl_frame:
+                        frame.append([ligand_atom_idx, residue_atom_idx])
+                atom_contacts.append(frame)
+            
+            self.atom_contacts = atom_contacts
+
+        elif mode == 'all':
+            pass
+        else:
+            pass
     
     def resid_from_aidx(self, atom_idx):
         resid = []
