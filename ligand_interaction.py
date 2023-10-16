@@ -43,19 +43,27 @@ class Interface:
     
     def get_residue_contacts(self, cutoff=0.35, mode='interface'):
         if mode == 'interface':
+            # residue indices for interface residues
             interface_resid_receptor = [x.index for x in self.interface_receptor]
             interface_resid_ligand = [x.index for x in self.interface_ligand]
+
+            # pairs of all interface receptor and ligand residues
             residue_pairs = np.array([x for x in itertools.product(interface_resid_receptor, interface_resid_ligand)])
 
+            # initialize list for contacts in each frame
             residue_contacts = []
 
+            # mdtraj residue contacts
             contacts, _ = md.compute_contacts(self.t, residue_pairs, scheme='closest-heavy')
 
             for frame in contacts:
+                # store residue pairs where contact distance is below cutoff
                 pairs = np.array([residue_pairs[i] for i in np.where(frame < cutoff)[0]])
                 residue_contacts.append(pairs)
 
+            # store contacts in object
             self.residue_contacts = residue_contacts
+
         elif mode == 'all':
             pass
         else:
@@ -69,17 +77,19 @@ class Interface:
             ligand_atoms = []
             receptor_atoms = []
 
+            # all heavy atoms of ligand interface
             for r in self.interface_ligand:
                 for a in r.atoms:
                     if a.element != 'H':
                         ligand_atoms.append(a)
             
+            # all heavy atoms of receptor interface
             for r in self.interface_receptor:
                 for a in r.atoms:
                     if a.element != 'H':
                         receptor_atoms.append(a)
             
-            # for halogen contacts remove all atoms but halogens
+            # for halogen contacts remove all atoms but halogens from ligand atoms
             if halogen_only:
                 ligand_atoms = [a for a in ligand_atoms if a.is_halogen]
 
@@ -90,6 +100,7 @@ class Interface:
             idx_receptor = [a.index for a in receptor_atoms]
 
             for a in ligand_atoms:
+                # compute_neighbors for ligand atom contacts
                 neigh = md.compute_neighbors(self.t, cutoff=cutoff, query_indices=[a.index], haystack_indices=[idx_receptor])
                 neighbor_lists.append(neigh)
             
@@ -103,6 +114,7 @@ class Interface:
                         frame.append([ligand_atom_idx, residue_atom_idx])
                 atom_contacts.append(frame)
             
+            # store atom contacts in object
             self.atom_contacts = atom_contacts
 
         elif mode == 'all':
@@ -142,26 +154,31 @@ class Interface:
             pass
     
     def store_residue(self, resid):
+        # basic residue information
         r = self.t.top.residue(resid)
         R = Residue()
         R.index = resid
         R.name = r.name
         R.resSeq = r.resSeq
 
+        # all bond that involve residue atoms
         bonds = []
         for b in self.t.top.bonds:
             if b[0].residue == r or b[1].residue == r:
                 bonds.append([b[0].index, b[1].index])
         R.bonds = bonds
 
+        # list of atoms
         atoms = []
         for a in r.atoms:
+            # basic atom information
             A = Atom()
             A.index = a.index
             A.name = a.name
             A.element = a.element.symbol
             A.residue = R
 
+            # list of tuple (index, element) of atoms the atom is bonded to
             a_bonds = []
             for b in self.t.top.bonds:
                 if b[0].index == a.index or b[1].index == a.index:
@@ -170,13 +187,16 @@ class Interface:
                             a_bonds.append([x.index, x.element.symbol])
             A.bonds = a_bonds
 
+            # is_sidechain from mdtraj
             A.is_sidechain = a.is_sidechain
 
+            # elements O and N are possible H-bond acceptors
             if A.element == 'N' or A.element == 'O':
                 A.is_hbond_acceptor = True
             else:
                 A.is_hbond_acceptor = False
             
+            # if element H is bonded to N or O means possible donor
             if A.element == 'N' or A.element == 'O':
                 if any([x[1] == 'H' for x in A.bonds]):
                     A.is_hbond_donor = True
@@ -185,11 +205,13 @@ class Interface:
             else:
                 A.is_hbond_donor = False
             
+            # halogen element symbols
             if A.element in ['F', 'Cl', 'Br', 'I']:
                 A.is_halogen = True
             else:
                 A.is_halogen = False
             
+            # check list of amino acid anion atoms (based on residue name)
             if R.name in residue_anions:
                 if a.name in residue_anions[R.name]:
                     A.is_anion = True
@@ -198,6 +220,7 @@ class Interface:
             else:
                 A.is_anion = False
 
+            # check list of amino acid cation atoms (based on residue name)
             if R.name in residue_cations:
                 if a.name in residue_cations[R.name]:
                     A.is_cation = True
