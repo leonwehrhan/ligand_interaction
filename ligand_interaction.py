@@ -101,7 +101,7 @@ class Interface:
 
             for a in ligand_atoms:
                 # compute_neighbors for ligand atom contacts
-                neigh = md.compute_neighbors(self.t, cutoff=cutoff, query_indices=[a.index], haystack_indices=[idx_receptor])
+                neigh = md.compute_neighbors(self.t, cutoff=cutoff, query_indices=[a.index], haystack_indices=idx_receptor)
                 neighbor_lists.append(neigh)
             
             for i_frame in range(len(neighbor_lists[0])):
@@ -114,6 +114,10 @@ class Interface:
                         frame.append([ligand_atom_idx, residue_atom_idx])
                 atom_contacts.append(frame)
             
+            # store halogen contacts
+            if halogen_only:
+                self.halogen_contacts = atom_contacts
+                return
             # store atom contacts in object
             self.atom_contacts = atom_contacts
 
