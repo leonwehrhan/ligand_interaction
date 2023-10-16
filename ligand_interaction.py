@@ -31,6 +31,7 @@ class Interface:
         self.residue_contacts = None
         self.atom_contacts = None
         self.halogen_contacts = None
+        self.dihedrals = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
         print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
@@ -125,7 +126,61 @@ class Interface:
             pass
         else:
             pass
+
+    def get_dihedrals(self, mode='interface'):
+        dihedrals = {}
+
+        # phi backbone dihedrals
+        dihedrals['phi'] = {}
+        idx, phi = md.compute_phi(self.t)
+        for i, d in enumerate(idx):
+            idx_CA = d[2]
+            resid = self.t.top.atom(idx_CA).residue.index
+            dihedrals['phi'][resid] = phi[:, i]
+        
+        # psi backbone dihedrals
+        dihedrals['psi'] = {}
+        idx, psi = md.compute_psi(self.t)
+        for i, d in enumerate(idx):
+            idx_CA = d[1]
+            resid = self.t.top.atom(idx_CA).residue.index
+            dihedrals['psi'][resid] = psi[:, i]
+
+        # chi1 sidechain dihedrals
+        dihedrals['chi1'] = {}
+        idx, chi1 = md.compute_chi1(self.t)
+        for i, d in enumerate(idx):
+            idx_CA = d[1]
+            resid = self.t.top.atom(idx_CA).residue.index
+            dihedrals['chi1'][resid] = chi1[:, i]
+
+        # chi2 sidechain dihedrals
+        dihedrals['chi2'] = {}
+        idx, chi2 = md.compute_chi2(self.t)
+        for i, d in enumerate(idx):
+            idx_CA = d[1]
+            resid = self.t.top.atom(idx_CA).residue.index
+            dihedrals['chi2'][resid] = chi2[:, i]
     
+        # chi3 sidechain dihedrals
+        dihedrals['chi3'] = {}
+        idx, chi3 = md.compute_chi3(self.t)
+        for i, d in enumerate(idx):
+            idx_CA = d[1]
+            resid = self.t.top.atom(idx_CA).residue.index
+            dihedrals['chi3'][resid] = chi3[:, i]
+
+        # chi4 sidechain dihedrals
+        dihedrals['chi4'] = {}
+        idx, chi4 = md.compute_chi4(self.t)
+        for i, d in enumerate(idx):
+            idx_CA = d[1]
+            resid = self.t.top.atom(idx_CA).residue.index
+            dihedrals['chi4'][resid] = chi4[:, i]
+        
+        # store dihedrals
+        self.dihedrals = dihedrals
+
     def resid_from_aidx(self, atom_idx):
         resid = []
         for i in atom_idx:
