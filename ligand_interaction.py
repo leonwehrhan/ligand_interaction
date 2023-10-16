@@ -31,6 +31,7 @@ class Interface:
         self.residue_contacts = None
         self.atom_contacts = None
         self.halogen_contacts = None
+        self.atom_contact_distances = None
         self.dihedrals = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
@@ -126,6 +127,22 @@ class Interface:
             pass
         else:
             pass
+    
+    def get_atom_contact_distances(self):
+        atom_contact_distances = {}
+        unique_atom_contacts = []
+        for frame in self.atom_contacts:
+            for c in frame:
+                if c not in unique_atom_contacts:
+                    unique_atom_contacts.append(c)
+        
+        dists = md.compute_distances(self.t, unique_atom_contacts)
+
+        for i, c in unique_atom_contacts:
+            s = f'{self.t.atom(c[0])}--{self.t.atom(c[0])}'
+            atom_contact_distances[s] = dists[:, i]
+        
+        self.atom_contact_distances = atom_contact_distances
 
     def get_dihedrals(self, mode='interface'):
         dihedrals = {}
