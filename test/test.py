@@ -82,3 +82,31 @@ def test_store_residue(interface_object):
         if a.name == 'CG':
             assert a.is_hbond_acceptor == False
             assert a.is_hbond_donor == False
+
+def test_residue_contacts():
+    t = md.load('test.xtc', top='test.pdb', stride=10)
+
+    sel_receptor = 'resid 0 to 222'
+    sel_ligand = 'resid 223 to 280'
+
+    I = ligand_interaction.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
+    I.get_residue_contacts()
+
+    for i_frame, frame in enumerate(I.residue_contacts):
+        for c in frame:
+            d, _ = md.compute_contacts(I.t, [c])
+            assert d[i_frame][0] <= 0.35
+
+def test_atom_contacts():
+    t = md.load('test.xtc', top='test.pdb', stride=10)
+
+    sel_receptor = 'resid 0 to 222'
+    sel_ligand = 'resid 223 to 280'
+
+    I = ligand_interaction.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
+    I.get_atom_contacts()
+
+    for i_frame, frame in enumerate(I.atom_contacts):
+        for c in frame:
+            d = md.compute_distances(I.t, [c])
+            assert d[i_frame][0] <= 0.35
