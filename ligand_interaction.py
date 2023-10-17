@@ -195,6 +195,26 @@ class Interface:
             resid = self.t.top.atom(idx_CA).residue.index
             dihedrals['chi4'][resid] = chi4[:, i]
         
+        # interface residues only
+        if mode == 'interface':
+            dihedrals_interface = {}
+            resid_interface = []
+
+            for r in self.interface_receptor:
+                resid_interface.append(r.index)
+            for r in self.interface_ligand:
+                resid_interface.append(r.index)
+
+            for dihed in dihedrals:
+                dihedrals_interface[dihed] = {}
+                for resid in dihedrals[dihed]:
+                    if resid in resid_interface:
+                        dihedrals_interface[dihed][resid] = dihedrals[dihed][resid]
+            
+            self.dihedrals = dihedrals_interface
+            return
+
+        
         # store dihedrals
         self.dihedrals = dihedrals
 
