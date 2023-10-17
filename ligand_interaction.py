@@ -34,6 +34,7 @@ class Interface:
         self.halogen_contacts = None
         self.atom_contact_distances = None
         self.ionic_contacts = None
+        self.hbonds = None
         self.dihedrals = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
@@ -184,6 +185,69 @@ class Interface:
             ionic_contacts.append(f)
 
         self.ionic_contacts = ionic_contacts
+    
+    def hbonds(self, HA_cutoff=0.28, DHA_cutoff=2.09, HAB_cutoff=1.57):
+        hbonds = []
+        # possible acceptors
+        ligand_acceptors = []
+        receptor_acceptors = []
+
+        for r in self.interface_ligand:
+            for a in r.atoms:
+                if a.is_acceptor:
+                    ligand_acceptors.append(a)
+        for r in self.interface_receptor:
+            for a in r.atoms:
+                if a.is_acceptor:
+                    receptor_acceptors.append(a)
+            
+        # donor, H, acceptor triplets
+        triplets = []
+
+        # ligand donors
+        for r in self.interface_ligand:
+            for a in r.atoms:
+                if a.is_donor:
+                    h_atoms = []
+                    for b in a.bonds:
+                        if b[1] == 'H':
+                            h_atoms.append(b[0])
+                    for aa in receptor_acceptors:
+                        for h in h_atoms:
+                            triplets.append([a.index, h, aa.index])
+
+        # ligand acceptors
+        for r in self.interface_receptor:
+            for a in r.atoms:
+                if a.is_donor:
+                    h_atoms = []
+                    for b in a.bonds:
+                        if b[1] == 'H':
+                            h_atoms.append(b[0])
+                    for aa in ligand_acceptors:
+                        for h in h_atoms:
+                            triplets.append([a.index, h, aa.index])
+        
+        # HA pairs for distance calculation
+        ha_pairs = [x[1:3] for x in triplets]
+
+        # distance and angle calculations
+        dists = md.compute_distances(self.t, ha_pairs)
+        angs = md.compute_angles(self.t, triplets)
+
+        # boolean masks from distance and angles
+        mask_dist = dists < HA_cutoff
+        mask_ang = angs < DHA_cutoff  
+        mask = mask_dist * mask_ang 
+
+        for frame in mask:
+            f = []
+            for i, x in enumerate(frame):
+                if x:
+                    f.append(triplets[i])
+            hbonds.append(frame)
+        
+        self.hbonds = hbonds
 
     def get_atom_contact_distances(self):
         atom_contact_distances = {}
