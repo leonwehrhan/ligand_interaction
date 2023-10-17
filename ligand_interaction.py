@@ -30,6 +30,7 @@ class Interface:
         # interaction data
         self.residue_contacts = None
         self.atom_contacts = None
+        self.polar_atom_contacts = None
         self.halogen_contacts = None
         self.atom_contact_distances = None
         self.dihedrals = None
@@ -74,6 +75,7 @@ class Interface:
     def get_atom_contacts(self, cutoff=0.35, mode='interface', halogen_only=False):
         if mode == 'interface':
             atom_contacts = []
+            polar_atom_contacts = []
 
             # atom objects for ligand and receptor heavy atoms
             ligand_atoms = []
@@ -108,20 +110,38 @@ class Interface:
             
             for i_frame in range(len(neighbor_lists[0])):
                 frame = []
+                frame_polar = []
                 for i, nl in enumerate(neighbor_lists):
                     ligand_atom_idx = ligand_atoms[i].index
                     nl_frame = nl[i_frame]
 
-                    for residue_atom_idx in nl_frame:
-                        frame.append([ligand_atom_idx, residue_atom_idx])
+                    for receptor_atom_idx in nl_frame:
+                        # store atom contact
+                        frame.append([ligand_atom_idx, receptor_atom_idx])
+
+                        # store in polar atom contacts if element fits
+                        if ligand_atoms[i].element in ['N', 'O']:
+                            
+                            # check receptor atom element
+                            for a in receptor_atoms:
+                                if a.index == receptor_atom_idx:
+                                    receptor_atom = a
+                            if receptor_atom.element in ['N', 'O']:
+                                # store in polar contacts
+                                frame_polar.append([ligand_atom_idx, receptor_atom_idx])
+
                 atom_contacts.append(frame)
+                polar_atom_contacts.append(frame_polar)
+
             
             # store halogen contacts
             if halogen_only:
                 self.halogen_contacts = atom_contacts
                 return
+            
             # store atom contacts in object
             self.atom_contacts = atom_contacts
+            self.polar_atom_contacts = polar_atom_contacts
 
         elif mode == 'all':
             pass
