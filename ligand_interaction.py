@@ -186,7 +186,7 @@ class Interface:
 
         self.ionic_contacts = ionic_contacts
     
-    def hbonds(self, HA_cutoff=0.28, DHA_cutoff=2.09, HAB_cutoff=1.57):
+    def get_hbonds(self, HA_cutoff=0.28, DHA_cutoff=2.09, HAB_cutoff=1.57):
         hbonds = []
         # possible acceptors
         ligand_acceptors = []
