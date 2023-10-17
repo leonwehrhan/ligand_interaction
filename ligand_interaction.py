@@ -138,8 +138,8 @@ class Interface:
         
         dists = md.compute_distances(self.t, unique_atom_contacts)
 
-        for i, c in unique_atom_contacts:
-            s = f'{self.t.atom(c[0])}--{self.t.atom(c[0])}'
+        for i, c in enumerate(unique_atom_contacts):
+            s = f'{self.t.top.atom(c[0])}--{self.t.top.atom(c[1])}'
             atom_contact_distances[s] = dists[:, i]
         
         self.atom_contact_distances = atom_contact_distances
