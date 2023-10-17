@@ -33,6 +33,7 @@ class Interface:
         self.polar_atom_contacts = None
         self.halogen_contacts = None
         self.atom_contact_distances = None
+        self.ionic_contacts = None
         self.dihedrals = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
@@ -120,13 +121,13 @@ class Interface:
                         frame.append([ligand_atom_idx, receptor_atom_idx])
 
                         # store in polar atom contacts if element fits
-                        if ligand_atoms[i].element in ['N', 'O']:
+                        if ligand_atoms[i].element in ['N', 'O', 'S']:
                             
                             # check receptor atom element
                             for a in receptor_atoms:
                                 if a.index == receptor_atom_idx:
                                     receptor_atom = a
-                            if receptor_atom.element in ['N', 'O']:
+                            if receptor_atom.element in ['N', 'O', 'S']:
                                 # store in polar contacts
                                 frame_polar.append([ligand_atom_idx, receptor_atom_idx])
 
@@ -147,7 +148,43 @@ class Interface:
             pass
         else:
             pass
+
+    def get_ionic_contacts(self, cutoff=0.37):
+        ionic_contacts = []
+
+        ligand_cations = []
+        ligand_anions = []
+
+        for r in self.interface_ligand:
+            for a in r.atoms:
+                if a.is_cation:
+                    ligand_cations.append(a)
+                elif a.is_anion:
+                    ligand_anions.append(a)
+        
+        receptor_cations = []
+        receptor_anions = []
+
+        for r in self.interface_receptor:
+            for a in r.atoms:
+                if a.is_cation:
+                    receptor_cations.append(a)
+                elif a.is_anion:
+                    receptor_anions.append(a)
+        
+        pairs = [x for x in itertools.product([a.index for a in ligand_cations], [a.index for a in receptor_anions])] + [x for x in itertools.product([a.index for a in ligand_anions], [a.index for a in receptor_cations])]
     
+        dists = md.compute_distances(self.t, pairs)
+
+        for frame in dists:
+            f = []
+            for i, x in enumerate(frame):
+                if x < cutoff:
+                    f.append(pairs[i])
+            ionic_contacts.append(f)
+
+        self.ionic_contacts = ionic_contacts
+
     def get_atom_contact_distances(self):
         atom_contact_distances = {}
         unique_atom_contacts = []
