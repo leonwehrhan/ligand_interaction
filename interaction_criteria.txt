@@ -1,3 +1,5 @@
+Collection of Criteria for interactions from the Maestro User Manual. These are not always the criteria employed for this code.
+
 Schrödinger Criteria:
 
 H-Bonds: 
@@ -43,6 +45,6 @@ Ionic interaction:
 Water bridges:
     H-bond (see above) with water in between. slightly changed criteria: 2.8 A, 110°, 90°.
 
-F-H bonds:
+F-H bonds (not from Schrödinger):
     X..D distance < 3.3 A
     X..H-D angle > 160°
