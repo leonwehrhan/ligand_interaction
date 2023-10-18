@@ -249,6 +249,9 @@ class Interface:
         
         self.hbonds = hbonds
 
+    def get_aromatic_interactions(self):
+        pass
+
     def get_atom_contact_distances(self):
         atom_contact_distances = {}
         unique_atom_contacts = []
@@ -452,6 +455,30 @@ class Interface:
 
         return R
 
+    def aromatic_centroid_orth(self, r):
+        aromatic_atom_idx = []
+        plane_idx = []
+
+        # get aromatic atom indices based on atom name (in amber14sb)
+        if r.name in ['PHE', 'TYR']:
+            for a in r.atoms:
+                if a.name in ['CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ']:
+                    aromatic_atom_idx.append(a.index)
+        elif r.name == 'TRP':
+            for a in r.atoms:
+                if a.name in ['CG', 'CD1', 'NE1', 'CE2', 'CZ2', 'CH2', 'CZ3', 'CE3', 'CD2']:
+                    aromatic_atom_idx.append(a.index)
+        
+        # get three atoms in aromatic system to define plane for orthogonal
+        if r.name in ['PHE', 'TYR']:
+            for a in r.atoms:
+                if a.name in ['CG', 'CE1', 'CE2']:
+                    plane_idx.append(a.index)
+        elif r.name == 'TRP':
+            for a in r.atoms:
+                if a.name in ['CG', 'CZ2', 'CZ3']:
+                    plane_idx.append(a.index)
+        
 
 class Residue:
     def __init__(self):
