@@ -459,6 +459,9 @@ class Interface:
         aromatic_atom_idx = []
         plane_idx = []
 
+        centroid_coordinates = np.zeros((self.t.n_frames, 3))
+        orthogonal_vectors = [(self.t.n_frames, 3)]
+
         # get aromatic atom indices based on atom name (in amber14sb)
         if r.name in ['PHE', 'TYR']:
             for a in r.atoms:
@@ -478,6 +481,23 @@ class Interface:
             for a in r.atoms:
                 if a.name in ['CG', 'CZ2', 'CZ3']:
                     plane_idx.append(a.index)
+        
+        # coordinates of armotaic atoms
+        xyz_ar = self.t.xyz[:, aromatic_atom_idx]
+        
+        # calculate centroid coordinates
+        for i, x in enumerate(xyz_ar):
+            centroid_coordinates[i, :] = np.mean(x, axis=0)
+        
+        # calculate orthogonal vectors
+        vec1 = self.t.xyz[:, plane_idx[1]] - self.t.xyz[:, plane_idx[0]]
+        vec2 = self.t.xyz[:, plane_idx[2]] - self.t.xyz[:, plane_idx[0]]
+
+        for i in range(self.t.n_frames):
+            dot = np.dot(vec1[i], vec2[i])
+            orthogonal_vectors[i, :] = dot / np.linalg.norm(dot)
+        
+        return centroid_coordinates, orthogonal_vectors
         
 
 class Residue:
