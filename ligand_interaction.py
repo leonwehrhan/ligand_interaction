@@ -28,13 +28,26 @@ class Interface:
         self.resid_ligand = self.resid_from_aidx(self.idx_ligand)
 
         # interaction data
+
+        # contacts
         self.residue_contacts = None
         self.atom_contacts = None
         self.polar_atom_contacts = None
         self.halogen_contacts = None
-        self.atom_contact_distances = None
         self.ionic_contacts = None
+
+        # contact distances
+        self.atom_contact_distances = None
+
+        # h-bonds
         self.hbonds = None
+
+        # aromatic interactions
+        self.aromatic_pi_stack = None
+        self.aromatic_tshaped = None
+        self.aromatic_cation = None
+
+        # dihedrals
         self.dihedrals = None
 
         print(f'Analyzing interactions in trajectory with {t.n_frames} frames and {t.n_atoms} atoms.')
@@ -249,8 +262,39 @@ class Interface:
         
         self.hbonds = hbonds
 
-    def get_aromatic_interactions(self):
-        pass
+    def get_aromatic_interactions(self, mode='interface'):
+        pi_stacking = []
+        t_shaped = []
+        pi_cation = []
+
+        ligand_aromatics = [r for r in self.interface_ligand if r.name in ['PHE', 'TYR', 'TRP']]
+        receptor_aromatics = [r for r in self.interface_receptor if r.name in ['PHE', 'TYR', 'TRP']]
+
+        ligand_cations = []
+        receptor_cations = []
+
+        for r in self.interface_ligand:
+            for a in r.atoms:
+                if a.is_cation:
+                    ligand_cations.append(a.index)
+        
+        for r in self.interface_receptor:
+            for a in r.atoms:
+                if a.is_cation:
+                    receptor_cations.append(a.index)
+
+        if mode == 'interface':
+            pairs = [x for x in itertools.product(range(len(ligand_aromatics)), range(len(receptor_aromatics)))]
+            pairs_cation_1 = [x for x in itertools.product(range(len(ligand_aromatics)), range(len(receptor_cations)))]
+            pairs_cation_2 = [x for x in itertools.product(range(len(receptor_aromatics)), range(len(ligand_cations)))]
+        
+            for i_frame in range(self.t.n_frames):
+                for pair in pairs:
+                    r1 = ligand_aromatics[pair[0]]
+                    r2 = receptor_aromatics[pair[1]]
+
+                    c1, o1 = self.aromatic_centroid_orth(r1)
+                    c2, o2 = self.aromatic_centroid_orth(r2)
 
     def get_atom_contact_distances(self):
         atom_contact_distances = {}
