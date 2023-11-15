@@ -267,9 +267,11 @@ class Interface:
         t_shaped = []
         pi_cation = []
 
+        # interface residues that have an aromatic system
         ligand_aromatics = [r for r in self.interface_ligand if r.name in ['PHE', 'TYR', 'TRP']]
         receptor_aromatics = [r for r in self.interface_receptor if r.name in ['PHE', 'TYR', 'TRP']]
 
+        # cations in interface residues
         ligand_cations = []
         receptor_cations = []
 
@@ -284,7 +286,11 @@ class Interface:
                     receptor_cations.append(a.index)
 
         if mode == 'interface':
+
+            # pairs of ligand-receptor interface residues with aromatics
             pairs = [x for x in itertools.product(range(len(ligand_aromatics)), range(len(receptor_aromatics)))]
+
+            # pairs of aromatics and cations for ligand(Ar)-receptor(CAT) and receptor(Ar)-ligand(CAT)
             pairs_cation_1 = [x for x in itertools.product(range(len(ligand_aromatics)), range(len(receptor_cations)))]
             pairs_cation_2 = [x for x in itertools.product(range(len(receptor_aromatics)), range(len(ligand_cations)))]
         
@@ -500,6 +506,21 @@ class Interface:
         return R
 
     def aromatic_centroid_orth(self, r):
+        '''
+        Get centroid and orthogonal vector of aromatic system in residue.
+
+        Parameters
+        ----------
+        r : Residue
+            Residue object with aromatic system. Has to be PHE, TYR or TRP.
+        
+        Returns
+        -------
+        centroid_coordinates : np.ndarray
+            Array of shape (n_frames, 3) that holds coordinates of aromatic centroid throughout the simulation.
+        orthogonal_vectors : np.ndarray
+            Array of shape (n_frames, 3) that holds the orthogonal vectors of the aromatic system throughout the simulation.
+        '''
         aromatic_atom_idx = []
         plane_idx = []
 
