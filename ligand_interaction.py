@@ -207,11 +207,11 @@ class Interface:
 
         for r in self.interface_ligand:
             for a in r.atoms:
-                if a.is_acceptor:
+                if a.is_hbond_acceptor:
                     ligand_acceptors.append(a)
         for r in self.interface_receptor:
             for a in r.atoms:
-                if a.is_acceptor:
+                if a.is_hbond_acceptor:
                     receptor_acceptors.append(a)
             
         # donor, H, acceptor triplets
@@ -220,7 +220,7 @@ class Interface:
         # ligand donors
         for r in self.interface_ligand:
             for a in r.atoms:
-                if a.is_donor:
+                if a.is_hbond_donor:
                     h_atoms = []
                     for b in a.bonds:
                         if b[1] == 'H':
@@ -229,10 +229,10 @@ class Interface:
                         for h in h_atoms:
                             triplets.append([a.index, h, aa.index])
 
-        # ligand acceptors
+        # receptor donors
         for r in self.interface_receptor:
             for a in r.atoms:
-                if a.is_donor:
+                if a.is_hbond_donor:
                     h_atoms = []
                     for b in a.bonds:
                         if b[1] == 'H':
@@ -327,7 +327,7 @@ class Interface:
                 t_shaped.append(t_frame)
             
             # pi cation contacts
-            
+
 
 
 
