@@ -258,7 +258,7 @@ class Interface:
             for i, x in enumerate(frame):
                 if x:
                     f.append(triplets[i])
-            hbonds.append(frame)
+            hbonds.append(f)
         
         self.hbonds = hbonds
 
