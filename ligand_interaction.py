@@ -262,7 +262,7 @@ class Interface:
         
         self.hbonds = hbonds
 
-    def get_aromatic_interactions(self, mode='interface'):
+    def get_aromatic_interactions(self, pi_cutoff=0.40, t_cutoff=0.45, cation_cutoff=0.45, mode='interface'):
         pi_stacking = []
         t_shaped = []
         pi_cation = []
@@ -294,13 +294,42 @@ class Interface:
             pairs_cation_1 = [x for x in itertools.product(range(len(ligand_aromatics)), range(len(receptor_cations)))]
             pairs_cation_2 = [x for x in itertools.product(range(len(receptor_aromatics)), range(len(ligand_cations)))]
         
-            for i_frame in range(self.t.n_frames):
-                for pair in pairs:
-                    r1 = ligand_aromatics[pair[0]]
-                    r2 = receptor_aromatics[pair[1]]
+            # store distances and orth angles for all aromatic pairs
+            dists_pairs = np.zeros((len(pairs), self.t.n_frames))
+            angs_pairs = np.zeros((len(pairs), self.t.n_frames))
 
-                    c1, o1 = self.aromatic_centroid_orth(r1)
-                    c2, o2 = self.aromatic_centroid_orth(r2)
+            for i, pair in enumerate(pairs):
+                r1 = ligand_aromatics[pair[0]]
+                r2 = receptor_aromatics[pair[1]]
+
+                c1, o1 = self.aromatic_centroid_orth(r1)
+                c2, o2 = self.aromatic_centroid_orth(r2)
+
+                d = np.linalg.norm(c1 - c2, axis=1)
+                ang = np.array([self._ang(v1, v2) for v1, v2 in zip(o1, o2)])
+
+                dists_pairs[i] = d
+                angs_pairs[i] = ang
+            
+            for i_frame in range(self.t.n_frames):
+                pi_frame = []
+                t_frame = []
+                for i_pair in range(len(pairs)):
+                    if dists_pairs[i_pair][i_frame] < pi_cutoff:
+                        if angs_pairs[i_pair][i_frame] < 0.17 or angs_pairs[i_pair][i_frame] > 2.97:
+                            pi_frame.append(pairs[i_pair])
+                    
+                    if dists_pairs[i_pair][i_frame] < t_cutoff:
+                        if angs_pairs[i_pair][i_frame] < 1.75 and angs_pairs[i_pair][i_frame] > 1.40:
+                            t_frame.append(pairs[i_pair])
+                
+                pi_stacking.append(pi_frame)
+                t_shaped.append(t_frame)
+            
+            # pi cation contacts
+            
+
+
 
     def get_atom_contact_distances(self):
         atom_contact_distances = {}
@@ -563,6 +592,16 @@ class Interface:
             orthogonal_vectors[i, :] = dot / np.linalg.norm(dot)
         
         return centroid_coordinates, orthogonal_vectors
+    
+    def _ang(self, v1, v2):
+        '''
+        Calculate angle between two vectors.
+        '''
+        u_v1 = v1 / np.linalg.norm(v1)
+        u_v2 = v2 / np.linalg.norm(v2)
+
+        ang = np.arccos(np.clip(np.dot(u_v1, u_v2), -1.0, 1.0))
+        return ang
         
 
 class Residue:
