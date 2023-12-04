@@ -60,6 +60,21 @@ class Interface:
         self.interface_ligand = [self.store_residue(x) for x in interface_resid_ligand]
     
     def get_residue_contacts(self, cutoff=0.35, mode='interface'):
+        '''
+        Calculate residue contacts, where the closest heavy atoms of residues of ligand and receptor come closer than the cutoff distance.
+
+        Parameters
+        ----------
+        cutoff : float
+            Distance cutoff in nm.
+        mode : str
+            Only "interface" is implemented.
+        
+        Returns
+        -------
+        residue_contacts : list of np.ndarray
+            List with length n_frames with np.ndarray of shape (n_pairs, 2) for each frame that holds all residue contact pairs of the frame.
+        '''
         if mode == 'interface':
             # residue indices for interface residues
             interface_resid_receptor = [x.index for x in self.interface_receptor]
@@ -81,6 +96,7 @@ class Interface:
 
             # store contacts in object
             self.residue_contacts = residue_contacts
+            return residue_contacts
 
         elif mode == 'all':
             pass
@@ -88,6 +104,18 @@ class Interface:
             pass
 
     def get_atom_contacts(self, cutoff=0.35, mode='interface', halogen_only=False):
+        '''
+        Calculate atom contacts, where atoms of ligand and receptor come closer than the cutoff distance.
+
+        Parameters
+        ----------
+        cutoff : float
+            Distance cutoff in nm.
+        mode: str
+            Only "interface" is implemented.
+        halogen_only : bool
+            Only get contacts with ligand halogen atoms. Stored in self.halogen_contacts instead of self.atom_contacts.
+        '''
         if mode == 'interface':
             atom_contacts = []
             polar_atom_contacts = []
@@ -164,6 +192,14 @@ class Interface:
             pass
 
     def get_ionic_contacts(self, cutoff=0.37):
+        '''
+        Calculate contacts between ligand and receptor ions.
+
+        Parameters
+        ----------
+        cutoff : float
+            Distance cutoff in nm.
+        '''
         ionic_contacts = []
 
         ligand_cations = []
@@ -263,6 +299,20 @@ class Interface:
         self.hbonds = hbonds
 
     def get_aromatic_interactions(self, pi_cutoff=0.40, t_cutoff=0.45, cation_cutoff=0.45, mode='interface'):
+        '''
+        Calculate aromatic interactions between ligand and receptor. Possible interactions are pi-pi stacking, t-shaped pi interaction or cation-pi interactions.
+
+        Parameters
+        ----------
+        pi_cutoff : float
+            Distance cutoff for pi-pi stacking in nm.
+        t_cutoff : float
+            Distance cutoff for t-shaped pi interactions in nm.
+        cation_cutoff : float
+            Distance cutoff for pi-cation interaction in nm.
+        mode : str
+            Only "interface" is implemented.
+        '''
         pi_stacking = []
         t_shaped = []
         pi_cation = []
@@ -332,6 +382,9 @@ class Interface:
 
 
     def get_atom_contact_distances(self):
+        '''
+        Calculate distances for all atom contact pairs. Atom contacts have to be calculated before calling this method.
+        '''
         atom_contact_distances = {}
         unique_atom_contacts = []
         for frame in self.atom_contacts:
@@ -348,6 +401,9 @@ class Interface:
         self.atom_contact_distances = atom_contact_distances
 
     def get_dihedrals(self, mode='interface'):
+        '''
+        Calculate all backbone and sidechain dihedral angles in the trajectory.
+        '''
         dihedrals = {}
 
         # phi backbone dihedrals
