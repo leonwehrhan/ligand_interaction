@@ -377,7 +377,43 @@ class Interface:
                 t_shaped.append(t_frame)
             
             # pi cation contacts
+            dist_cation_pairs_1 = np.zeros((len(pair), self.t.n_frames))
+            dist_cation_pairs_2 = np.zeros((len(pair), self.t.n_frames))
 
+            for i, pair in pairs_cation_1:
+                r_ar = ligand_aromatics[pair[0]]
+                a_cat = receptor_cations[pair[1]]
+
+                c_ar, o_ar = self.aromatic_centroid_orth(r_ar)
+
+                d = np.linalg.norm(c_ar - self.t.xyz[:, a_cat], axis=1)
+                dist_cation_pairs_1[i] = d
+
+            for i, pair in pairs_cation_2:
+                r_ar = receptor_aromatics[pair[0]]
+                a_cat = ligand_cations[pair[1]]
+
+                c_ar, o_ar = self.aromatic_centroid_orth(r_ar)
+
+                d = np.linalg.norm(c_ar - self.t.xyz[:, a_cat], axis=1)
+                dist_cation_pairs_2[i] = d
+            
+            for i_frame in range(self.t.n_frames):
+                cat_frame = []
+
+                for i_pair in range(len(pairs_cation_1)):
+                    if dist_cation_pairs_1 < cation_cutoff:
+                        cat_frame.append(pairs_cation_1[i_pair])
+                    
+                for i_pair in range(len(pairs_cation_2)):
+                    if dist_cation_pairs_2 < cation_cutoff:
+                        cat_frame.append(pairs_cation_2[i_pair])
+                
+                pi_cation.append(cat_frame)
+
+        self.aromatic_pi_stack = pi_stacking
+        self.aromatic_tshaped = t_shaped
+        self.aromatic_cation = pi_cation
 
 
 
