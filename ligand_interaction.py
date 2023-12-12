@@ -377,8 +377,8 @@ class Interface:
                 t_shaped.append(t_frame)
             
             # pi cation contacts
-            dist_cation_pairs_1 = np.zeros((len(pair), self.t.n_frames))
-            dist_cation_pairs_2 = np.zeros((len(pair), self.t.n_frames))
+            dist_cation_pairs_1 = np.zeros((len(pairs_cation_1), self.t.n_frames))
+            dist_cation_pairs_2 = np.zeros((len(pairs_cation_2), self.t.n_frames))
 
             for i, pair in pairs_cation_1:
                 r_ar = ligand_aromatics[pair[0]]
