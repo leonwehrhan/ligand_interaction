@@ -380,7 +380,7 @@ class Interface:
             dist_cation_pairs_1 = np.zeros((len(pairs_cation_1), self.t.n_frames))
             dist_cation_pairs_2 = np.zeros((len(pairs_cation_2), self.t.n_frames))
 
-            for i, pair in pairs_cation_1:
+            for i, pair in enumerate(pairs_cation_1):
                 r_ar = ligand_aromatics[pair[0]]
                 a_cat = receptor_cations[pair[1]]
 
@@ -389,7 +389,7 @@ class Interface:
                 d = np.linalg.norm(c_ar - self.t.xyz[:, a_cat], axis=1)
                 dist_cation_pairs_1[i] = d
 
-            for i, pair in pairs_cation_2:
+            for i, pair in enumerate(pairs_cation_2):
                 r_ar = receptor_aromatics[pair[0]]
                 a_cat = ligand_cations[pair[1]]
 
