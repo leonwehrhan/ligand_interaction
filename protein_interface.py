@@ -1,6 +1,8 @@
 import mdtraj as md
 import numpy as np
 import itertools
+from topology_objects import Residue, Atom
+from utils import residue_anions, residue_cations
 
 
 class Interface:
@@ -694,38 +696,6 @@ class Interface:
 
         ang = np.arccos(np.clip(np.dot(u_v1, u_v2), -1.0, 1.0))
         return ang
-        
-
-class Residue:
-    def __init__(self):
-        self.index = None
-        self.name = None
-        self.resSeq = None
-
-        self.atoms = []
-        self.bonds = []
-
-
-class Atom:
-    def __init__(self):
-        self.index = None
-        self.name = None
-        self.element = None
-        self.residue = None
-
-        self.bonds = []
-
-        self.is_sidechain = None
-        self.is_hbond_donor = None
-        self.is_hbond_acceptor = None
-        self.is_cation = None
-        self.is_anion = None
-        self.is_halogen = None
-        self.is_hydrophobic = None
-
-
-residue_cations = {'ARG':['NH1', 'NH2'], 'LYS':['NZ'], 'HIP':['ND1', 'NE2'], 'HIE':['NE2'], 'HID':['ND1']}
-residue_anions = {'ASP':['OD1', 'OD2'], 'GLU': ['OE1', 'OE2']}
 
 
 if __name__ == 'main':
