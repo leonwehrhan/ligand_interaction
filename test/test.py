@@ -1,4 +1,4 @@
-from context import ligand_interaction
+from context import protein_interface
 import mdtraj as md
 import numpy as np
 import pytest
@@ -11,7 +11,7 @@ def interface_object():
     sel_receptor = 'resid 0 to 222'
     sel_ligand = 'resid 223 to 280'
 
-    I = ligand_interaction.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
+    I = protein_interface.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
 
     return I
 
@@ -89,7 +89,7 @@ def test_residue_contacts():
     sel_receptor = 'resid 0 to 222'
     sel_ligand = 'resid 223 to 280'
 
-    I = ligand_interaction.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
+    I = protein_interface.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
     I.get_residue_contacts()
 
     for i_frame, frame in enumerate(I.residue_contacts):
@@ -103,7 +103,7 @@ def test_atom_contacts():
     sel_receptor = 'resid 0 to 222'
     sel_ligand = 'resid 223 to 280'
 
-    I = ligand_interaction.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
+    I = protein_interface.Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
     I.get_atom_contacts()
 
     for i_frame, frame in enumerate(I.atom_contacts):
