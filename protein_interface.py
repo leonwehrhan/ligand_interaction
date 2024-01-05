@@ -2,7 +2,7 @@ import mdtraj as md
 import numpy as np
 import itertools
 from topology_objects import Residue, Atom, store_residue
-from utils import resid_from_aidx, ang
+from utils import resid_from_aidx, ang, index_pairs
 
 
 class Interface:
@@ -21,21 +21,46 @@ class Interface:
     def __init__(self, t, sel_receptor, sel_ligand):
         self.t = t
 
-        # atom indices of receptor and ligand
+        # atom indices of all receptor and ligand atoms
         self.idx_receptor = t.top.select(sel_receptor)
         self.idx_ligand = t.top.select(sel_ligand)
 
-        #residue indices of receptor and ligand
+        #residue indices of all receptor and ligand residues
         self.resid_receptor = resid_from_aidx(self.t, self.idx_receptor)
         self.resid_ligand = resid_from_aidx(self.t, self.idx_ligand)
 
-        interface_residues_receptor = None
-        interface_residues_ligand = None
+        # residue objects for the interface
+        interface_resid_receptor, interface_resid_ligand = self.get_interface_residue_idx(method='contacts', cutoff=0.4)
+        self.interface_residues_receptor = [store_residue(self.t, x) for x in interface_resid_receptor]
+        self.interface_residues_ligand = [store_residue(self.t, x) for x in interface_resid_ligand]
 
-        interface_atoms_receptor = None
-        interface_atoms_receptor = None
+        # atom objects for atoms in interface residues
+        interface_atoms_receptor = []
+        interface_atoms_ligand = []
+        for r in self.interface_residues_receptor:
+            for a in r.atoms:
+                interface_atoms_receptor.append(a)
+        for r in self.interface_residues_ligand:
+            for a in r.atoms:
+                interface_atoms_ligand.append(a)
 
-        # interaction data
+        polar_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_polar]
+        polar_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_polar]
+
+        acceptor_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_acceptor]
+        acceptor_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_acceptor]
+
+        donor_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_donor]
+        donor_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_donor]
+
+        cation_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_cation]
+        cation_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_cation]
+
+        anion_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_anion]
+        anion_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_anion]
+
+        # receptor-ligand pairs
+        self.residue_pairs
 
         # contacts
         self.residue_contacts = None
@@ -62,10 +87,41 @@ class Interface:
         print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
         print(f'Ligand has {len(self.idx_ligand)} atoms and {len(self.resid_ligand)} residues.')
 
-        # interface residues
-        interface_resid_receptor, interface_resid_ligand = self.get_interface(method='contacts', cutoff=0.4)
-        self.interface_receptor = [store_residue(self.t, x) for x in interface_resid_receptor]
-        self.interface_ligand = [store_residue(self.t, x) for x in interface_resid_ligand]
+    def get_interface_residue_idx(self, cutoff=0.4, frame=0):
+        '''
+        Get the residue indices of the interface residues based on contact distance between ligand and receptor residues.
+
+        Parameters
+        ----------
+        cutoff : float
+            Cutoff distance.
+        frame : int
+            Only one frame of the trajectory is considered. Default 0.
+        
+        Returns
+        -------
+        interface_resid_receptor : list of int
+            Residue indices of receptor residues in the interface.
+        interface_resid_ligand : list of int
+            Residue indices of ligand indices in the interface.
+        '''
+        interface_resid_receptor = []
+        interface_resid_ligand = []
+
+        # compute residue contacts of all ligand residue pairs
+        residue_pairs = np.array([x for x in itertools.product(self.resid_ligand, self.resid_receptor)])
+        contacts, _ = md.compute_contacts(self.t[frame], residue_pairs, scheme='closest-heavy')
+
+        interface_pairs = np.where(contacts[0] < cutoff)[0]
+
+        for i in interface_pairs:
+            rp = residue_pairs[i]
+            if rp[0] not in interface_resid_ligand:
+                interface_resid_ligand.append(rp[0])
+            if rp[1] not in interface_resid_receptor:
+                interface_resid_receptor.append(rp[1])
+        
+        return interface_resid_receptor, interface_resid_ligand
     
     def get_residue_contacts(self, cutoff=0.35, mode='interface'):
         '''
@@ -443,28 +499,6 @@ class Interface:
             atom_contact_distances[s] = dists[:, i]
         
         self.atom_contact_distances = atom_contact_distances
-    
-    def get_interface(self, method='contacts', cutoff=0.4):
-        interface_resid_receptor = []
-        interface_resid_ligand = []
-        if method == 'contacts':
-            # compute residue contacts of all ligand residue pairs
-            # only apply first frame of trajectory
-            residue_pairs = np.array([x for x in itertools.product(self.resid_ligand, self.resid_receptor)])
-            contacts, _ = md.compute_contacts(self.t[0], residue_pairs, scheme='closest-heavy')
-
-            interface_pairs = np.where(contacts[0] < cutoff)[0]
-
-            for i in interface_pairs:
-                rp = residue_pairs[i]
-                if rp[0] not in interface_resid_ligand:
-                    interface_resid_ligand.append(rp[0])
-                if rp[1] not in interface_resid_receptor:
-                    interface_resid_receptor.append(rp[1])
-            
-            return interface_resid_receptor, interface_resid_ligand
-        else:
-            pass
 
     def aromatic_centroid_orth(self, r):
         '''
