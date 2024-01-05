@@ -70,9 +70,9 @@ class Interface:
         self.aromatic_cation_pairs = aromatic_cation_index_pairs(rec=self.interface_residues_receptor, cat_rec=cation_interface_atoms_receptor, lig=self.interface_residues_ligand, cat_lig=cation_interface_atoms_ligand)
 
         # contacts
-        self.residue_contacts = None
-        self.polar_atom_contacts = None
-        self.ionic_contacts = None
+        self.residue_contacts = np.zeros(len(self.t), len(self.residue_pairs), dtype=bool)
+        self.polar_atom_contacts = np.zeros(len(self.t), len(self.polar_atom_pairs), dtype=bool)
+        self.ionic_contacts = np.zeros(len(self.t), len(self.ion_atom_pairs), dtype=bool)
 
         # h-bonds
         self.hbonds = None
@@ -124,92 +124,40 @@ class Interface:
                 interface_resid_receptor.append(rp[1])
         
         return interface_resid_receptor, interface_resid_ligand
-
-    def get_ionic_contacts(self, cutoff=0.37):
+    
+    def get_residue_contacts(self, cutoff=0.35):
         '''
-        Calculate contacts between ligand and receptor ions.
+        Calculate residue contacts, where the closest heavy atoms of residues of ligand and receptor come closer than the cutoff distance.
 
         Parameters
         ----------
         cutoff : float
             Distance cutoff in nm.
         '''
-        ionic_contacts = []
+        residue_pairs = self.residue_pairs
+        contacts, _ = md.compute_contacts(self.t, residue_pairs, scheme='closest-heavy')
+        self.residue_contacts = contacts < cutoff
 
-        ligand_cations = []
-        ligand_anions = []
+    def get_atom_contacts(self, pairs, cutoff=0.37):
+        '''
+        Calculate contacts between atoms.
 
-        for r in self.interface_ligand:
-            for a in r.atoms:
-                if a.is_cation:
-                    ligand_cations.append(a)
-                elif a.is_anion:
-                    ligand_anions.append(a)
-        
-        receptor_cations = []
-        receptor_anions = []
-
-        for r in self.interface_receptor:
-            for a in r.atoms:
-                if a.is_cation:
-                    receptor_cations.append(a)
-                elif a.is_anion:
-                    receptor_anions.append(a)
-        
-        pairs = [x for x in itertools.product([a.index for a in ligand_cations], [a.index for a in receptor_anions])] + [x for x in itertools.product([a.index for a in ligand_anions], [a.index for a in receptor_cations])]
-    
+        Parameters
+        ----------
+        pairs : list of tuple of int
+            Atom pairs.
+        cutoff : float
+            Distance cutoff in nm.
+        '''
         dists = md.compute_distances(self.t, pairs)
-
-        for frame in dists:
-            f = []
-            for i, x in enumerate(frame):
-                if x < cutoff:
-                    f.append(pairs[i])
-            ionic_contacts.append(f)
-
-        self.ionic_contacts = ionic_contacts
+        return dists < cutoff
     
-    def get_hbonds(self, HA_cutoff=0.25, DHA_cutoff=2.09):
-        hbonds = []
-        # possible acceptors
-        ligand_acceptors = []
-        receptor_acceptors = []
-
-        for r in self.interface_ligand:
-            for a in r.atoms:
-                if a.is_hbond_acceptor:
-                    ligand_acceptors.append(a)
-        for r in self.interface_receptor:
-            for a in r.atoms:
-                if a.is_hbond_acceptor:
-                    receptor_acceptors.append(a)
-            
-        # donor, H, acceptor triplets
-        triplets = []
-
-        # ligand donors
-        for r in self.interface_ligand:
-            for a in r.atoms:
-                if a.is_hbond_donor:
-                    h_atoms = []
-                    for b in a.bonds:
-                        if b[1] == 'H':
-                            h_atoms.append(b[0])
-                    for aa in receptor_acceptors:
-                        for h in h_atoms:
-                            triplets.append([a.index, h, aa.index])
-
-        # receptor donors
-        for r in self.interface_receptor:
-            for a in r.atoms:
-                if a.is_hbond_donor:
-                    h_atoms = []
-                    for b in a.bonds:
-                        if b[1] == 'H':
-                            h_atoms.append(b[0])
-                    for aa in ligand_acceptors:
-                        for h in h_atoms:
-                            triplets.append([a.index, h, aa.index])
+    def get_hbonds(self, triplets):
+        '''
+        Calculate H bonds based on D-H-A triplets and the Baker Hubbard criterion.
+        '''
+        HA_cutoff = 0.25
+        DHA_cutoff = 2.09
         
         # HA pairs for distance calculation
         ha_pairs = [x[1:3] for x in triplets]
@@ -222,15 +170,7 @@ class Interface:
         mask_dist = dists < HA_cutoff
         mask_ang = angs < DHA_cutoff  
         mask = mask_dist * mask_ang 
-
-        for frame in mask:
-            f = []
-            for i, x in enumerate(frame):
-                if x:
-                    f.append(triplets[i])
-            hbonds.append(f)
-        
-        self.hbonds = hbonds
+        return mask
 
     def get_aromatic_interactions(self, pi_cutoff=0.40, t_cutoff=0.45, cation_cutoff=0.45, mode='interface'):
         '''
