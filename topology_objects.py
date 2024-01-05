@@ -44,6 +44,10 @@ def store_residue(t, resid):
             bonds.append([b[0].index, b[1].index])
     R.bonds = bonds
 
+    # handle missing bond information
+    if R.bonds == []:
+        print(f'No bond information for {R.name}{R.resSeq}.')
+
     # list of atoms
     atoms = []
     for a in r.atoms:
