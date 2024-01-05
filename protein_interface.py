@@ -33,8 +33,11 @@ class Interface:
         self.resid_receptor = resid_from_aidx(self.t, self.idx_receptor)
         self.resid_ligand = resid_from_aidx(self.t, self.idx_ligand)
 
+        print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
+        print(f'Ligand has {len(self.idx_ligand)} atoms and {len(self.resid_ligand)} residues.')
+
         # residue objects for the interface
-        interface_resid_receptor, interface_resid_ligand = self.get_interface_residue_idx(method='contacts', cutoff=0.4)
+        interface_resid_receptor, interface_resid_ligand = self.get_interface_residue_idx(method='contacts', cutoff=0.5)
         self.interface_residues_receptor = [store_residue(self.t, x) for x in interface_resid_receptor]
         self.interface_residues_ligand = [store_residue(self.t, x) for x in interface_resid_ligand]
 
@@ -63,6 +66,10 @@ class Interface:
         anion_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_anion]
         anion_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_anion]
 
+        print('Interface:')
+        print(f'Receptor: {len(self.interface_residues_receptor)} residues, {len(interface_atoms_receptor)} atoms.')
+        print(f'Ligand: {len(self.interface_residues_ligand)} residues, {len(interface_atoms_ligand)} atoms.')
+
         # receptor-ligand pairs (and triplets for hbonds)
         self.residue_pairs = index_pairs(self.interface_residues_receptor, self.interface_residues_ligand)
         self.aromatic_residue_pairs = index_pairs(self.interface_residues_receptor, self.interface_residues_ligand, aromatic_residues_only=True)
@@ -73,25 +80,19 @@ class Interface:
         self.aromatic_cation_pairs = aromatic_cation_index_pairs(rec=self.interface_residues_receptor, cat_rec=cation_interface_atoms_receptor, lig=self.interface_residues_ligand, cat_lig=cation_interface_atoms_ligand)
 
         # contacts
-        self.residue_contacts = np.zeros(len(self.t), len(self.residue_pairs), dtype=bool)
-        self.polar_atom_contacts = np.zeros(len(self.t), len(self.polar_atom_pairs), dtype=bool)
-        self.ionic_contacts = np.zeros(len(self.t), len(self.ion_atom_pairs), dtype=bool)
+        self.residue_contacts = None
+        self.get_residue_contacts()
+
+        self.polar_atom_contacts = self.get_atom_contacts(self, self.polar_atom_pairs, cutoff=0.37)
+        self.ionic_contacts = self.get_atom_contacts(self, self.ion_atom_pairs, cutoff=0.37)
 
         # h-bonds
-        self.hbonds = None
+        self.hbonds = self.get_hbonds(self.hbond_triplets)
 
         # aromatic interactions
-        self.aromatic_pi_stack = None
-        self.aromatic_tshaped = None
-        self.aromatic_cation = None
+        self.aromatic_cation = self.get_cation_pi(self.aromatic_cation_pairs, cutoff=0.45)
 
-        # dihedrals
-        self.dihedrals = None
-
-        print(f'Receptor has {len(self.idx_receptor)} atoms and {len(self.resid_receptor)} residues.')
-        print(f'Ligand has {len(self.idx_ligand)} atoms and {len(self.resid_ligand)} residues.')
-
-    def get_interface_residue_idx(self, cutoff=0.4, frame=0):
+    def get_interface_residue_idx(self, cutoff=0.5, frame=0):
         '''
         Get the residue indices of the interface residues based on contact distance between ligand and receptor residues.
 
