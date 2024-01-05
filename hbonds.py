@@ -22,7 +22,7 @@ def find_hbond_triplets(rec_donors, rec_acceptors, lig_donors, lig_acceptors):
         Hbond triplets in format (D, H, A).
     '''
     rec_acceptor_idx = [x.index for x in rec_acceptors]
-    lig_acceptor_idx = [x for x in lig_acceptors]
+    lig_acceptor_idx = [x.index for x in lig_acceptors]
 
     rec_donor_duplets = []
     for a in rec_donors:

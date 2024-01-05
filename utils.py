@@ -111,5 +111,11 @@ def aromatic_cation_index_pairs(rec, cat_rec, lig, cat_lig):
     -------
     pairs : list of tuple (Residue, int)
     '''
-    pairs = [x for x in itertools.product(rec, cat_lig)] + [x for x in itertools.product(lig, cat_rec)]
+    rec_ar = [x for x in rec if x.name in AROMATIC_RING_ATOMS]
+    lig_ar = [x for x in lig if x.name in AROMATIC_RING_ATOMS]
+
+    cat_rec_idx = [x.index for x in cat_rec]
+    cat_lig_idx = [x.index for x in cat_lig]
+
+    pairs = [x for x in itertools.product(rec_ar, cat_lig_idx)] + [x for x in itertools.product(lig_ar, cat_rec_idx)]
     return pairs

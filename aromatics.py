@@ -24,7 +24,7 @@ def aromatic_centroid_orth(t, r):
     plane_idx = []
 
     centroid_coordinates = np.zeros((t.n_frames, 3))
-    orthogonal_vectors = [(t.n_frames, 3)]
+    orthogonal_vectors = np.zeros((t.n_frames, 3))
 
     # get aromatic atom indices based on atom name (in amber14sb)
     for a in r.atoms:

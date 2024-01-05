@@ -37,7 +37,7 @@ class Interface:
         print(f'Ligand has {len(self.idx_ligand)} atoms and {len(self.resid_ligand)} residues.')
 
         # residue objects for the interface
-        interface_resid_receptor, interface_resid_ligand = self.get_interface_residue_idx(method='contacts', cutoff=0.5)
+        interface_resid_receptor, interface_resid_ligand = self.get_interface_residue_idx(cutoff=0.5)
         self.interface_residues_receptor = [store_residue(self.t, x) for x in interface_resid_receptor]
         self.interface_residues_ligand = [store_residue(self.t, x) for x in interface_resid_ligand]
 
@@ -54,11 +54,11 @@ class Interface:
         polar_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_polar]
         polar_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_polar]
 
-        acceptor_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_acceptor]
-        acceptor_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_acceptor]
+        acceptor_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_hbond_acceptor]
+        acceptor_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_hbond_acceptor]
 
-        donor_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_donor]
-        donor_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_donor]
+        donor_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_hbond_donor]
+        donor_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_hbond_donor]
 
         cation_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_cation]
         cation_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_cation]
@@ -83,8 +83,8 @@ class Interface:
         self.residue_contacts = None
         self.get_residue_contacts()
 
-        self.polar_atom_contacts = self.get_atom_contacts(self, self.polar_atom_pairs, cutoff=0.37)
-        self.ionic_contacts = self.get_atom_contacts(self, self.ion_atom_pairs, cutoff=0.37)
+        self.polar_atom_contacts = self.get_atom_contacts(self.polar_atom_pairs, cutoff=0.37)
+        self.ionic_contacts = self.get_atom_contacts(self.ion_atom_pairs, cutoff=0.37)
 
         # h-bonds
         self.hbonds = self.get_hbonds(self.hbond_triplets)
@@ -181,7 +181,7 @@ class Interface:
         '''
         contacts = np.zeros((len(self.t), len(pairs)), dtype=bool)
         for i, p in enumerate(pairs):
-            c_ar, o_ar = self.aromatic_centroid_orth(p[0])
+            c_ar, o_ar = aromatic_centroid_orth(self.t, p[0])
             c_cat = self.t.xyz[:, p[1]]
             d = np.linalg.norm(c_ar - c_cat, axis=1)
             contacts[:, i] = d < cutoff
@@ -189,5 +189,10 @@ class Interface:
 
         
 
-if __name__ == 'main':
-    pass
+if __name__ == '__main__':
+    t = md.load('test/test.xtc', top='test/test.pdb')
+
+    sel_receptor = 'resid 0 to 222'
+    sel_ligand = 'resid 223 to 280'
+
+    I = Interface(t, sel_receptor=sel_receptor, sel_ligand=sel_ligand)
