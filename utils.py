@@ -1,8 +1,8 @@
 import numpy as np
 
 
-residue_cations = {'ARG':['NH1', 'NH2'], 'LYS':['NZ'], 'HIP':['ND1', 'NE2'], 'HIE':['NE2'], 'HID':['ND1']}
-residue_anions = {'ASP':['OD1', 'OD2'], 'GLU': ['OE1', 'OE2']}
+RESIDUE_CATIONS = {'ARG':['NH1', 'NH2'], 'LYS':['NZ'], 'HIP':['ND1', 'NE2'], 'HIE':['NE2'], 'HID':['ND1']}
+RESIDUE_ANIONS = {'ASP':['OD1', 'OD2'], 'GLU': ['OE1', 'OE2']}
 
 
 def ang(v1, v2):

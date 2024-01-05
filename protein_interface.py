@@ -2,7 +2,7 @@ import mdtraj as md
 import numpy as np
 import itertools
 from topology_objects import Residue, Atom, store_residue
-from utils import residue_anions, residue_cations, resid_from_aidx, ang
+from utils import resid_from_aidx, ang
 
 
 class Interface:

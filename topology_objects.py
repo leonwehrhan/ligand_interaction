@@ -1,5 +1,4 @@
-from utils import residue_cations, residue_anions
-
+from utils import RESIDUE_CATIONS, RESIDUE_ANIONS
 
 class Residue:
     def __init__(self):
@@ -92,8 +91,8 @@ def store_residue(t, resid):
             A.is_halogen = False
         
         # check list of amino acid anion atoms (based on residue name)
-        if R.name in residue_anions:
-            if a.name in residue_anions[R.name]:
+        if R.name in RESIDUE_ANIONS:
+            if a.name in RESIDUE_ANIONS[R.name]:
                 A.is_anion = True
             else:
                 A.is_anion = False
@@ -101,8 +100,8 @@ def store_residue(t, resid):
             A.is_anion = False
 
         # check list of amino acid cation atoms (based on residue name)
-        if R.name in residue_cations:
-            if a.name in residue_cations[R.name]:
+        if R.name in RESIDUE_CATIONS:
+            if a.name in RESIDUE_CATIONS[R.name]:
                 A.is_cation = True
             else:
                 A.is_cation = False
