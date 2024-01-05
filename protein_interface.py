@@ -2,7 +2,8 @@ import mdtraj as md
 import numpy as np
 import itertools
 from topology_objects import Residue, Atom, store_residue
-from utils import resid_from_aidx, ang, index_pairs
+from utils import resid_from_aidx, ang, index_pairs, ion_index_pairs, aromatic_cation_index_pairs
+from hbonds import find_hbond_triplets
 
 
 class Interface:
@@ -59,18 +60,19 @@ class Interface:
         anion_interface_atoms_receptor = [a for a in interface_atoms_receptor if a.is_anion]
         anion_interface_atoms_ligand = [a for a in interface_atoms_ligand if a.is_anion]
 
-        # receptor-ligand pairs
-        self.residue_pairs
+        # receptor-ligand pairs (and triplets for hbonds)
+        self.residue_pairs = index_pairs(self.interface_residues_receptor, self.interface_residues_ligand)
+        self.aromatic_residue_pairs = index_pairs(self.interface_residues_receptor, self.interface_residues_ligand, aromatic_residues_only=True)
+        self.polar_atom_pairs = index_pairs(polar_interface_atoms_receptor, polar_interface_atoms_ligand)
+        self.ion_atom_pairs = ion_index_pairs(cat_rec=cation_interface_atoms_receptor, an_rec=anion_interface_atoms_receptor, cat_lig=cation_interface_atoms_ligand, an_lig=anion_interface_atoms_ligand)
+        self.hbond_triplets = find_hbond_triplets(rec_donors=donor_interface_atoms_receptor, rec_acceptors=acceptor_interface_atoms_receptor, lig_donors=donor_interface_atoms_ligand, lig_acceptors=acceptor_interface_atoms_ligand)
+
+        self.aromatic_cation_pairs = aromatic_cation_index_pairs(rec=self.interface_residues_receptor, cat_rec=cation_interface_atoms_receptor, lig=self.interface_residues_ligand, cat_lig=cation_interface_atoms_ligand)
 
         # contacts
         self.residue_contacts = None
-        self.atom_contacts = None
         self.polar_atom_contacts = None
-        self.halogen_contacts = None
         self.ionic_contacts = None
-
-        # contact distances
-        self.atom_contact_distances = None
 
         # h-bonds
         self.hbonds = None
@@ -122,138 +124,6 @@ class Interface:
                 interface_resid_receptor.append(rp[1])
         
         return interface_resid_receptor, interface_resid_ligand
-    
-    def get_residue_contacts(self, cutoff=0.35, mode='interface'):
-        '''
-        Calculate residue contacts, where the closest heavy atoms of residues of ligand and receptor come closer than the cutoff distance.
-
-        Parameters
-        ----------
-        cutoff : float
-            Distance cutoff in nm.
-        mode : str
-            Only "interface" is implemented.
-        
-        Returns
-        -------
-        residue_contacts : list of np.ndarray
-            List with length n_frames with np.ndarray of shape (n_pairs, 2) for each frame that holds all residue contact pairs of the frame.
-        '''
-        if mode == 'interface':
-            # residue indices for interface residues
-            interface_resid_receptor = [x.index for x in self.interface_receptor]
-            interface_resid_ligand = [x.index for x in self.interface_ligand]
-
-            # pairs of all interface receptor and ligand residues
-            residue_pairs = np.array([x for x in itertools.product(interface_resid_receptor, interface_resid_ligand)])
-
-            # initialize list for contacts in each frame
-            residue_contacts = []
-
-            # mdtraj residue contacts
-            contacts, _ = md.compute_contacts(self.t, residue_pairs, scheme='closest-heavy')
-
-            for frame in contacts:
-                # store residue pairs where contact distance is below cutoff
-                pairs = np.array([residue_pairs[i] for i in np.where(frame < cutoff)[0]])
-                residue_contacts.append(pairs)
-
-            # store contacts in object
-            self.residue_contacts = residue_contacts
-            return residue_contacts
-
-        elif mode == 'all':
-            pass
-        else:
-            pass
-
-    def get_atom_contacts(self, cutoff=0.35, mode='interface', halogen_only=False):
-        '''
-        Calculate atom contacts, where atoms of ligand and receptor come closer than the cutoff distance.
-
-        Parameters
-        ----------
-        cutoff : float
-            Distance cutoff in nm.
-        mode: str
-            Only "interface" is implemented.
-        halogen_only : bool
-            Only get contacts with ligand halogen atoms. Stored in self.halogen_contacts instead of self.atom_contacts.
-        '''
-        if mode == 'interface':
-            atom_contacts = []
-            polar_atom_contacts = []
-
-            # atom objects for ligand and receptor heavy atoms
-            ligand_atoms = []
-            receptor_atoms = []
-
-            # all heavy atoms of ligand interface
-            for r in self.interface_ligand:
-                for a in r.atoms:
-                    if a.element != 'H':
-                        ligand_atoms.append(a)
-            
-            # all heavy atoms of receptor interface
-            for r in self.interface_receptor:
-                for a in r.atoms:
-                    if a.element != 'H':
-                        receptor_atoms.append(a)
-            
-            # for halogen contacts remove all atoms but halogens from ligand atoms
-            if halogen_only:
-                ligand_atoms = [a for a in ligand_atoms if a.is_halogen]
-
-            # store neighbor list for each ligand atom
-            neighbor_lists = []
-            
-            # receptor heavy atom indices as haystack_indices
-            idx_receptor = [a.index for a in receptor_atoms]
-
-            for a in ligand_atoms:
-                # compute_neighbors for ligand atom contacts
-                neigh = md.compute_neighbors(self.t, cutoff=cutoff, query_indices=[a.index], haystack_indices=idx_receptor)
-                neighbor_lists.append(neigh)
-            
-            for i_frame in range(len(neighbor_lists[0])):
-                frame = []
-                frame_polar = []
-                for i, nl in enumerate(neighbor_lists):
-                    ligand_atom_idx = ligand_atoms[i].index
-                    nl_frame = nl[i_frame]
-
-                    for receptor_atom_idx in nl_frame:
-                        # store atom contact
-                        frame.append([ligand_atom_idx, receptor_atom_idx])
-
-                        # store in polar atom contacts if element fits
-                        if ligand_atoms[i].element in ['N', 'O', 'S']:
-                            
-                            # check receptor atom element
-                            for a in receptor_atoms:
-                                if a.index == receptor_atom_idx:
-                                    receptor_atom = a
-                            if receptor_atom.element in ['N', 'O', 'S']:
-                                # store in polar contacts
-                                frame_polar.append([ligand_atom_idx, receptor_atom_idx])
-
-                atom_contacts.append(frame)
-                polar_atom_contacts.append(frame_polar)
-
-            
-            # store halogen contacts
-            if halogen_only:
-                self.halogen_contacts = atom_contacts
-                return
-            
-            # store atom contacts in object
-            self.atom_contacts = atom_contacts
-            self.polar_atom_contacts = polar_atom_contacts
-
-        elif mode == 'all':
-            pass
-        else:
-            pass
 
     def get_ionic_contacts(self, cutoff=0.37):
         '''

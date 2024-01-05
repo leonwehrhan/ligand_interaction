@@ -34,7 +34,7 @@ def resid_from_aidx(t, atom_idx):
     return np.array(resid)
 
 
-def index_pairs(x_rec, x_lig):
+def index_pairs(x_rec, x_lig, aromatic_residues_only=False):
     '''
     Make pairs of indices from two lists of Atom or Residue objects, where each object of one list is paired with all of the other.
 
@@ -44,14 +44,71 @@ def index_pairs(x_rec, x_lig):
         Atom/Residue objects of receptor.
     x_lig : list of Atom or list of Residue
         Atom/Residue objects of ligand.
+    aromatic_residues_only : bool
+        Only return pairs of aromatic residues.
     
     Returns
     -------
     pairs : list of tuple of int
         Paired indices.
     '''
-    idx_rec = [x.index for x in x_rec]
-    idx_lig = [x.index for x in x_lig]
+    if not aromatic_residues_only:
+        idx_rec = [x.index for x in x_rec]
+        idx_lig = [x.index for x in x_lig]
+    else:
+        idx_rec = [x.index for x in x_rec if x.name in AROMATIC_RING_ATOMS]
+        idx_lig = [x.index for x in x_lig if x.name in AROMATIC_RING_ATOMS]
 
     pairs = [x for x in itertools.product(idx_rec, idx_lig)]
+    return pairs
+
+
+def ion_index_pairs(cat_rec, an_rec, cat_lig, an_lig):
+    '''
+    Make pairs of ionic atom indices. The receptor cations are paired with ligand anions and vice versa.
+
+    Parameters
+    ----------
+    cat_rec : list of Atom
+        Cations of receptor.
+    an_rec : list of Atom
+        Anions of receptor.
+    cat_lig : list of Atom
+        Cations of ligand.
+    an_lig : list of Atom
+        Anions of ligand.
+
+    Returns
+    -------
+    pairs : list of tuple of int
+    '''
+    idx_cat_rec = [x.index for x in cat_rec]
+    idx_an_rec = [x.index for x in an_rec]
+    idx_cat_lig = [x.index for x in cat_lig]
+    idx_an_lig = [x.index for x in an_lig]
+
+    pairs = [x for x in itertools.product(idx_cat_rec, idx_an_lig)] + [x for x in itertools.product(idx_an_rec, idx_cat_lig)]
+    return pairs
+
+
+def aromatic_cation_index_pairs(rec, cat_rec, lig, cat_lig):
+    '''
+    Make pairs of aromatic residues and cation atom indices. Here, the residue objects are paired with the cation atom indices.
+
+    Parameters
+    ----------
+    rec : list of Residue
+        Residues of receptor interface.
+    cat_rec : list of Atom
+        Cationic atoms of receptor. 
+    lig : list of Residue
+        Residues of ligand interface.
+    cat_lig : list of Atom
+        Cationic atoms of ligand. 
+    
+    Returns
+    -------
+    pairs : list of tuple (Residue, int)
+    '''
+    pairs = [x for x in itertools.product(rec, cat_lig)] + [x for x in itertools.product(lig, cat_rec)]
     return pairs
