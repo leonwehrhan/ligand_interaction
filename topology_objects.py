@@ -1,3 +1,4 @@
+from utils import residue_cations, residue_anions
 
 
 class Residue:
@@ -26,3 +27,86 @@ class Atom:
         self.is_anion = None
         self.is_halogen = None
         self.is_hydrophobic = None
+
+
+def store_residue(t, resid):
+    # basic residue information
+    r = t.top.residue(resid)
+    R = Residue()
+    R.index = resid
+    R.name = r.name
+    R.resSeq = r.resSeq
+
+    # all bond that involve residue atoms
+    bonds = []
+    for b in t.top.bonds:
+        if b[0].residue == r or b[1].residue == r:
+            bonds.append([b[0].index, b[1].index])
+    R.bonds = bonds
+
+    # list of atoms
+    atoms = []
+    for a in r.atoms:
+        # basic atom information
+        A = Atom()
+        A.index = a.index
+        A.name = a.name
+        A.element = a.element.symbol
+        A.residue = R
+
+        # list of tuple (index, element) of atoms the atom is bonded to
+        a_bonds = []
+        for b in t.top.bonds:
+            if b[0].index == a.index or b[1].index == a.index:
+                for x in b:
+                    if x.index != a.index:
+                        a_bonds.append([x.index, x.element.symbol])
+        A.bonds = a_bonds
+
+        # is_sidechain from mdtraj
+        A.is_sidechain = a.is_sidechain
+
+        # elements O and N are possible H-bond acceptors
+        if A.element == 'N' or A.element == 'O':
+            A.is_hbond_acceptor = True
+        else:
+            A.is_hbond_acceptor = False
+        
+        # if element H is bonded to N or O means possible donor
+        if A.element == 'N' or A.element == 'O':
+            if any([x[1] == 'H' for x in A.bonds]):
+                A.is_hbond_donor = True
+            else:
+                A.is_hbond_donor = False
+        else:
+            A.is_hbond_donor = False
+        
+        # halogen element symbols
+        if A.element in ['F', 'Cl', 'Br', 'I']:
+            A.is_halogen = True
+        else:
+            A.is_halogen = False
+        
+        # check list of amino acid anion atoms (based on residue name)
+        if R.name in residue_anions:
+            if a.name in residue_anions[R.name]:
+                A.is_anion = True
+            else:
+                A.is_anion = False
+        else:
+            A.is_anion = False
+
+        # check list of amino acid cation atoms (based on residue name)
+        if R.name in residue_cations:
+            if a.name in residue_cations[R.name]:
+                A.is_cation = True
+            else:
+                A.is_cation = False
+        else:
+            A.is_cation = False
+
+        atoms.append(A)
+
+    R.atoms = atoms
+
+    return R
