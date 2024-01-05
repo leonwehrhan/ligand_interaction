@@ -1,4 +1,4 @@
-from utils import RESIDUE_CATIONS, RESIDUE_ANIONS
+from utils import RESIDUE_CATIONS, RESIDUE_ANIONS, HALOGEN_ELEMENTS, POLAR_ELEMENTS
 
 class Residue:
     def __init__(self):
@@ -8,6 +8,20 @@ class Residue:
 
         self.atoms = []
         self.bonds = []
+    
+    def get_atoms(self, which='all'):
+        if which == 'all':
+            return self.atoms
+        elif which == 'cation':
+            return [a for a in self.atoms if a.is_cation]
+        elif which == 'anion':
+            return [a for a in self.atoms if a.is_anion]
+        elif which == 'hbond_donor':
+            return [a for a in self.atoms if a.is_hbond_donor]
+        elif which == 'hbond_acceptor':
+            return [a for a in self.atoms if a.is_hbond_acceptor]
+        elif which == 'polar':
+            return [a for a in self.atoms if a.is_polar]
 
 
 class Atom:
@@ -26,6 +40,7 @@ class Atom:
         self.is_anion = None
         self.is_halogen = None
         self.is_hydrophobic = None
+        self.is_polar = None
 
 
 def store_residue(t, resid):
@@ -85,10 +100,15 @@ def store_residue(t, resid):
             A.is_hbond_donor = False
         
         # halogen element symbols
-        if A.element in ['F', 'Cl', 'Br', 'I']:
+        if A.element in HALOGEN_ELEMENTS:
             A.is_halogen = True
         else:
             A.is_halogen = False
+        
+        if A.element in POLAR_ELEMENTS:
+            A.is_polar = True
+        else:
+            A.is_polar = False
         
         # check list of amino acid anion atoms (based on residue name)
         if R.name in RESIDUE_ANIONS:
