@@ -1,4 +1,5 @@
 import numpy as np
+import itertools
 
 
 # cations and anions in aminoacids in AMBER14SB
@@ -31,3 +32,26 @@ def resid_from_aidx(t, atom_idx):
         if r_i not in resid:
             resid.append(r_i)
     return np.array(resid)
+
+
+def index_pairs(x_rec, x_lig):
+    '''
+    Make pairs of indices from two lists of Atom or Residue objects, where each object of one list is paired with all of the other.
+
+    Parameters
+    ----------
+    x_rec : list of Atom or list of Residue
+        Atom/Residue objects of receptor.
+    x_lig : list of Atom or list of Residue
+        Atom/Residue objects of ligand.
+    
+    Returns
+    -------
+    pairs : list of tuple of int
+        Paired indices.
+    '''
+    idx_rec = [x.index for x in x_rec]
+    idx_lig = [x.index for x in x_lig]
+
+    pairs = [x for x in itertools.product(idx_rec, idx_lig)]
+    return pairs
