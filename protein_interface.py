@@ -364,10 +364,10 @@ class Interface:
                 c2, o2 = self.aromatic_centroid_orth(r2)
 
                 d = np.linalg.norm(c1 - c2, axis=1)
-                ang = np.array([self._ang(v1, v2) for v1, v2 in zip(o1, o2)])
+                angl = np.array([ang(v1, v2) for v1, v2 in zip(o1, o2)])
 
                 dists_pairs[i] = d
-                angs_pairs[i] = ang
+                angs_pairs[i] = angl
             
             for i_frame in range(self.t.n_frames):
                 pi_frame = []
