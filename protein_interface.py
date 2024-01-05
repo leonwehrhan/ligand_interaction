@@ -2,7 +2,7 @@ import mdtraj as md
 import numpy as np
 import itertools
 from topology_objects import Residue, Atom
-from utils import residue_anions, residue_cations
+from utils import residue_anions, residue_cations, resid_from_aidx, ang
 
 
 class Interface:
@@ -26,8 +26,14 @@ class Interface:
         self.idx_ligand = t.top.select(sel_ligand)
 
         #residue indices of receptor and ligand
-        self.resid_receptor = self.resid_from_aidx(self.idx_receptor)
-        self.resid_ligand = self.resid_from_aidx(self.idx_ligand)
+        self.resid_receptor = resid_from_aidx(self.t, self.idx_receptor)
+        self.resid_ligand = resid_from_aidx(self.t, self.idx_ligand)
+
+        interface_residues_receptor = None
+        interface_residues_ligand = None
+
+        interface_atoms_receptor = None
+        interface_atoms_receptor = None
 
         # interaction data
 
@@ -514,15 +520,6 @@ class Interface:
         
         # store dihedrals
         self.dihedrals = dihedrals
-
-    def resid_from_aidx(self, atom_idx):
-        resid = []
-        for i in atom_idx:
-            a = self.t.top.atom(i)
-            r_i = a.residue.index
-            if r_i not in resid:
-                resid.append(r_i)
-        return np.array(resid)
     
     def get_interface(self, method='contacts', cutoff=0.4):
         interface_resid_receptor = []
@@ -686,16 +683,6 @@ class Interface:
             orthogonal_vectors[i, :] = dot / np.linalg.norm(dot)
         
         return centroid_coordinates, orthogonal_vectors
-    
-    def _ang(self, v1, v2):
-        '''
-        Calculate angle between two vectors.
-        '''
-        u_v1 = v1 / np.linalg.norm(v1)
-        u_v2 = v2 / np.linalg.norm(v2)
-
-        ang = np.arccos(np.clip(np.dot(u_v1, u_v2), -1.0, 1.0))
-        return ang
 
 
 if __name__ == 'main':
